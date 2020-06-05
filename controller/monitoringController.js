@@ -1,5 +1,8 @@
 var exec = require('child_process').exec;
 
+// LOG
+var logger = require('../config/log');
+
 var command;  // 명령어 변수
 
 var capacity;
@@ -13,6 +16,8 @@ module.exports = async function() {
     function capacityCommand(cmd) {
         return new Promise(function(resolve, reject) {
             exec(cmd, function(error, stdout, stderr) {
+                if(error)
+                  logger.error(error);
                 stdout = Number(stdout.split("\n")[0]).toFixed(2);
                 resolve(stdout ? stdout : stderr);
             });
@@ -23,6 +28,8 @@ module.exports = async function() {
     function cur_capacityCommand(cmd) {
         return new Promise(function(resolve, reject) {
             exec(cmd, function(error, stdout, stderr) {
+                if(error)
+                  logger.error(error);
                 stdout = Number(stdout.split("\n")[0]).toFixed(2);
                 resolve(stdout ? stdout : stderr);
             });
@@ -33,6 +40,8 @@ module.exports = async function() {
     function memoryCommand(cmd) {
         return new Promise(function(resolve, reject) {
             exec(cmd, function(error, stdout, stderr) {
+                if(error)
+                  logger.error(error);
                 // 전체 메모리 용량
                 memory = (Number(stdout.split('kB')[0].split(':')[1].trim())/1024).toFixed(2);
                 // 사용중인 메모리 용량
@@ -43,19 +52,9 @@ module.exports = async function() {
         });
     }
 
-    // DB Flush
-    function dbCommand(cmd) {
-        return new Promise(function(resolve, reject) {
-            exec(cmd, function(error, stdout, stderr) {
-                resolve(stdout ? stdout : stderr);
-            });
-        });
-    }
-
     capacity = await capacityCommand("df -P | grep -v ^Filesystem | awk '{sum += $2} END { print sum/1024/1024}'");
     cur_capacity = await cur_capacityCommand("df -P | grep -v ^Filesystem | awk '{sum += $3} END { print sum/1024/1024}'");
     await memoryCommand("cat /proc/meminfo");
-    await capacityCommand("mysqladmin flush-hosts");
 
     var result = new Object({});
 
